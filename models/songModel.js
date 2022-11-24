@@ -8,6 +8,10 @@ const songSchema = new mongoose.Schema(
       type: [String],
       required: [true, 'A song must have atleast one artist'],
     },
+    album: {
+      type: String,
+      required: [true, 'A song must have its album'],
+    },
     songURL: {
       type: String,
       required: [true, 'A song must have an url'],
@@ -19,12 +23,9 @@ const songSchema = new mongoose.Schema(
     },
     duration: {
       type: Number,
+      max: [43200, 'Duration must be less than or equal to 43200 (12 hours)'],
+      min: [1, 'Duration must be greater than or equal to 1 (1 second)'],
       required: [true, 'A song must have a duration'],
-      maxLength: [
-        43200,
-        'Duration must be less than or equal to 43200 (12 hours)',
-      ],
-      minLength: [1, 'Duration must be greater than or equal to 1 (1 second)'],
     },
     createdAt: { type: Date, default: Date.now(), select: false },
   },

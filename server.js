@@ -22,7 +22,7 @@ mongoose
   .connect(DB, { useNewUrlParser: true, useUnifiedTopology: true })
   .then(() => console.log('DB connection successful!'));
 
-const port = process.env.PORT || 4000;
+const port = process.env.PORT || 3500;
 const server = app.listen(port, () => {
   console.log(`App running on port ${port}`);
 });

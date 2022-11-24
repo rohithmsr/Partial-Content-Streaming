@@ -3,6 +3,8 @@ const path = require('path');
 
 const streamRouter = require('./routes/streamRoutes');
 const songRouter = require('./routes/songRoutes');
+const AppError = require('./utils/appError');
+const globalErrorHandler = require('./controllers/errorController');
 
 const app = express();
 
@@ -22,5 +24,15 @@ app.get('/api/v1/', (req, res) => {
     message: 'Welcome to the music streamer!',
   });
 });
+
+app.all('*', (req, res, next) => {
+  // const err = new Error();
+  // err.status = 'fail';
+  // err.statusCode = 404;
+
+  next(new AppError(`Can't find the ${req.originalUrl} on this server.`, 404));
+});
+
+app.use(globalErrorHandler);
 
 module.exports = app;

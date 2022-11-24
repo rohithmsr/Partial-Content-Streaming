@@ -1,7 +1,8 @@
 const Song = require('../models/songModel');
 const APIFeatures = require('./../utils/apiFeatures');
+const AppError = require('./../utils/appError');
 
-exports.createSong = async (req, res) => {
+exports.createSong = async (req, res, next) => {
   try {
     const newSong = await Song.create(req.body);
 
@@ -19,7 +20,7 @@ exports.createSong = async (req, res) => {
   }
 };
 
-exports.getAllSongs = async (req, res) => {
+exports.getAllSongs = async (req, res, next) => {
   try {
     // EXECUTE query
     const features = new APIFeatures(Song.find(), req.query)
@@ -44,9 +45,13 @@ exports.getAllSongs = async (req, res) => {
   }
 };
 
-exports.getSong = async (req, res) => {
+exports.getSong = async (req, res, next) => {
   try {
     const song = await Song.findById(req.params.id);
+
+    if (!song) {
+      next(new AppError('No song found with that ID', 404));
+    }
 
     res.status(200).json({
       status: 'success',
@@ -62,12 +67,16 @@ exports.getSong = async (req, res) => {
   }
 };
 
-exports.updateSong = async (req, res) => {
+exports.updateSong = async (req, res, next) => {
   try {
     const song = await Song.findByIdAndUpdate(req.params.id, req.body, {
       new: true,
       runValidators: true,
     });
+
+    if (!song) {
+      next(new AppError('No song found with that ID', 404));
+    }
 
     res.status(200).json({
       status: 'success',
@@ -83,9 +92,13 @@ exports.updateSong = async (req, res) => {
   }
 };
 
-exports.deleteSong = async (req, res) => {
+exports.deleteSong = async (req, res, next) => {
   try {
-    await Song.findByIdAndDelete(req.params.id);
+    const song = await Song.findByIdAndDelete(req.params.id);
+
+    if (!song) {
+      next(new AppError('No song found with that ID', 404));
+    }
 
     res.status(204).json({
       status: 'success',
