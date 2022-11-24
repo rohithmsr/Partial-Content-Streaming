@@ -4,7 +4,6 @@ const path = require('path');
 const streamRouter = require('./routes/streamRoutes');
 
 const app = express();
-let global = 0;
 
 app.use(express.json());
 app.use(express.static(path.join(__dirname, 'assets')));

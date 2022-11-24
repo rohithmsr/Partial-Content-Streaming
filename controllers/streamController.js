@@ -29,7 +29,7 @@ const getRangeHeader = (range, totalLength) => {
   return result;
 };
 
-const sendResponse = (res, statusCode, downloadStream) => {
+const sendStreamResponse = (res, statusCode, downloadStream) => {
   res.status(statusCode);
 
   downloadStream.on('data', (chunk) => {
@@ -45,7 +45,7 @@ const sendResponse = (res, statusCode, downloadStream) => {
   });
 };
 
-exports.checkID = (req, res, next, val) => {
+exports.checkID = (req, res, next) => {
   const fileId = req.params.id;
 
   const song = path.join(__dirname, '..', 'assets', 'songs', `${fileId}.mp3`);
@@ -75,7 +75,7 @@ exports.downloadStream = (req, res) => {
     res.set('Accept-Ranges', 'bytes');
 
     console.log('Full');
-    sendResponse(res, 200, fs.createReadStream(req.song));
+    sendStreamResponse(res, 200, fs.createReadStream(req.song));
     return;
   }
 
@@ -89,7 +89,7 @@ exports.downloadStream = (req, res) => {
     res.set('Accept-Ranges', 'bytes');
 
     console.log('Full');
-    sendResponse(res, 200, fs.createReadStream(req.song));
+    sendStreamResponse(res, 200, fs.createReadStream(req.song));
     return;
   }
 
@@ -106,7 +106,7 @@ exports.downloadStream = (req, res) => {
   res.set('Cache-Control', 'no-cache');
 
   console.log(`Partial ${start}-${end}`);
-  sendResponse(
+  sendStreamResponse(
     res,
     206,
     fs.createReadStream(req.song, {
