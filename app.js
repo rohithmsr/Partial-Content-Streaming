@@ -2,6 +2,7 @@ const express = require('express');
 const path = require('path');
 
 const streamRouter = require('./routes/streamRoutes');
+const songRouter = require('./routes/songRoutes');
 
 const app = express();
 
@@ -14,6 +15,7 @@ app.use((req, res, next) => {
 });
 
 app.use('/api/v1/streams', streamRouter);
+app.use('/api/v1/songs', songRouter);
 
 app.get('/api/v1/', (req, res) => {
   res.status(200).json({
