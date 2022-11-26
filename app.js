@@ -3,6 +3,7 @@ const path = require('path');
 
 const streamRouter = require('./routes/streamRoutes');
 const songRouter = require('./routes/songRoutes');
+const userRouter = require('./routes/userRoutes');
 const AppError = require('./utils/appError');
 const globalErrorHandler = require('./controllers/errorController');
 
@@ -18,6 +19,7 @@ app.use((req, res, next) => {
 
 app.use('/api/v1/streams', streamRouter);
 app.use('/api/v1/songs', songRouter);
+app.use('/api/v1/users', userRouter);
 
 app.get('/api/v1/', (req, res) => {
   res.status(200).json({
