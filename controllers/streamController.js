@@ -1,5 +1,6 @@
 const fs = require('fs');
 const path = require('path');
+const mongodb = require('mongodb');
 
 const getRangeHeader = (range, totalLength) => {
   if (range == null || range.length == 0) {
@@ -28,6 +29,11 @@ const getRangeHeader = (range, totalLength) => {
 
   return result;
 };
+
+const DB = process.env.DATABASE.replace(
+  '<PASSWORD>',
+  process.env.DATABASE_PASSWORD
+);
 
 const sendStreamResponse = (res, statusCode, downloadStream) => {
   res.status(statusCode);
@@ -114,4 +120,25 @@ exports.downloadStream = (req, res) => {
       end: end,
     })
   );
+};
+
+exports.uploadSongStream = (req, res, next) => {
+  const musicFile = req.file;
+  console.log(req);
+  // if (!musicFile) return next();
+
+  const bucket = new mongodb.GridFSBucket(DB, {
+    bucketName: 'music-crypto-app',
+  });
+
+  // create upload stream using GridFS bucket
+  const musicUploadStream = bucket.openUploadStream(musicFile.filename);
+  const musicReadStream = fs.createReadStream(musicFile);
+
+  // Finally Upload!
+  musicReadStream.pipe(musicUploadStream);
+
+  // All done!
+  // next();
+  res.status(200).send('Done..');
 };

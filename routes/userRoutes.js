@@ -15,6 +15,11 @@ router.get(
   userController.getAllUsers
 );
 
-router.patch('/updateMe', authController.protect, userController.updateMe);
+router.patch(
+  '/updateMe',
+  authController.protect,
+  userController.uploadUserPhoto,
+  userController.updateMe
+);
 
 module.exports = router;
