@@ -1,16 +1,32 @@
 const multer = require('multer');
+const { GridFsStorage } = require('multer-gridfs-storage');
 
 const Song = require('../models/songModel');
 const APIFeatures = require('./../utils/apiFeatures');
 const AppError = require('./../utils/appError');
 
-const multerStorage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    cb(null, 'assets/img/users');
-  },
-  filename: (req, file, cb) => {
+const DB = process.env.DATABASE.replace(
+  '<PASSWORD>',
+  process.env.DATABASE_PASSWORD
+);
+
+// const multerStorage = multer.diskStorage({
+//   destination: (req, file, cb) => {
+//     cb(null, 'assets/img/dummy');
+//   },
+//   filename: (req, file, cb) => {
+//     const ext = file.mimetype.split('/')[1];
+//     cb(null, `user-${req.user.id}-${Date.now()}.${ext}`);
+//   },
+// });
+
+const multerStorage = new GridFsStorage({
+  url: DB,
+  file: (req, file) => {
     const ext = file.mimetype.split('/')[1];
-    cb(null, `user-${req.user.id}-${Date.now()}.${ext}`);
+    return {
+      filename: `song-image-${req.params.id}-${Date.now()}.${ext}`,
+    };
   },
 });
 
@@ -29,18 +45,27 @@ const upload = multer({
 
 exports.uploadSongImage = upload.single('songImageURL');
 
-const songMulterStorage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    cb(null, 'assets/music');
-  },
-  filename: (req, file, cb) => {
+// const songMulterStorage = multer.diskStorage({
+//   destination: (req, file, cb) => {
+//     cb(null, 'assets/img/dummy');
+//   },
+//   filename: (req, file, cb) => {
+//     const ext = file.mimetype.split('/')[1];
+//     cb(null, `song-${req.params.id}-${Date.now()}.${ext}`);
+//   },
+// });
+
+const songMulterStorage = new GridFsStorage({
+  url: DB,
+  file: (req, file) => {
     const ext = file.mimetype.split('/')[1];
-    cb(null, `song-${req.params.id}-${Date.now()}.${ext}`);
+    return {
+      filename: `song-${req.params.id}-${Date.now()}.${ext}`,
+    };
   },
 });
 
 const songMulterFilter = (req, file, cb) => {
-  console.log(file.mimetype);
   if (file.mimetype.startsWith('audio')) {
     cb(null, true);
   } else {
@@ -155,7 +180,7 @@ exports.updateSong = async (req, res, next) => {
     res.status(200).json({
       status: 'success',
       data: {
-        updatedSong,
+        song,
       },
     });
   } catch (err) {

@@ -1,14 +1,46 @@
 const multer = require('multer');
+const { GridFsStorage } = require('multer-gridfs-storage');
+
 const User = require('./../models/userModel');
 const AppError = require('./../utils/appError');
 
-const multerStorage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    cb(null, 'assets/img/users');
-  },
-  filename: (req, file, cb) => {
+const DB = process.env.DATABASE.replace(
+  '<PASSWORD>',
+  process.env.DATABASE_PASSWORD
+);
+
+// const multerStorage = multer.diskStorage({
+//   destination: (req, file, cb) => {
+//     cb(null, 'assets/img/dummy');
+//   },
+//   filename: (req, file, cb) => {
+//     const ext = file.mimetype.split('/')[1];
+//     cb(null, `user-${req.user.id}-${Date.now()}.${ext}`);
+//   },
+// });
+
+// const multerStorage = new mongodb.GridFSBucket(
+//   new mongodb.MongoClient(DB).db('music-crypto-app'),
+//   {
+//     bucketName: 'music-bucket',
+//   }
+// );
+
+// const multerStorage = storage({
+//   url: DB,
+//   filename: (req, file, cb) => {
+//     const ext = file.mimetype.split('/')[1];
+//     cb(null, `user-${req.user.id}-${Date.now()}.${ext}`);
+//   },
+// });
+
+const multerStorage = new GridFsStorage({
+  url: DB,
+  file: (req, file) => {
     const ext = file.mimetype.split('/')[1];
-    cb(null, `user-${req.user.id}-${Date.now()}.${ext}`);
+    return {
+      filename: `user-${req.user.id}-${Date.now()}.${ext}`,
+    };
   },
 });
 
@@ -74,6 +106,7 @@ exports.updateMe = async (req, res, next) => {
 
     // 2) Filtered out unwanted fields names that are not allowed to be updated
     const filteredRequestBody = filterFields(req.body, 'name', 'email');
+    console.log(req.file);
     if (req.file) filteredRequestBody.photoURL = req.file.filename;
 
     // 3) Update user document
