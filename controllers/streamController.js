@@ -121,24 +121,3 @@ exports.downloadStream = (req, res) => {
     })
   );
 };
-
-exports.uploadSongStream = (req, res, next) => {
-  const musicFile = req.file;
-  console.log(req);
-  // if (!musicFile) return next();
-
-  const bucket = new mongodb.GridFSBucket(DB, {
-    bucketName: 'music-crypto-app',
-  });
-
-  // create upload stream using GridFS bucket
-  const musicUploadStream = bucket.openUploadStream(musicFile.filename);
-  const musicReadStream = fs.createReadStream(musicFile);
-
-  // Finally Upload!
-  musicReadStream.pipe(musicUploadStream);
-
-  // All done!
-  // next();
-  res.status(200).send('Done..');
-};

@@ -10,12 +10,4 @@ router
   .route('/:id')
   .get(authController.protect, streamController.downloadStream);
 
-router
-  .route('/')
-  .post(
-    authController.protect,
-    authController.restrictTo('admin'),
-    streamController.uploadSongStream
-  );
-
 module.exports = router;

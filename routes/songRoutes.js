@@ -1,4 +1,5 @@
 const express = require('express');
+const streamController = require('./../controllers/streamController');
 const songController = require('./../controllers/songController');
 const authController = require('./../controllers/authController');
 
@@ -7,9 +8,11 @@ const router = express.Router();
 router
   .route('/:id')
   .get(songController.getSong)
+  .put(songController.uploadSongURL, songController.addSongFile)
   .patch(
     authController.protect,
     authController.restrictTo('admin'),
+    songController.uploadSongImage,
     songController.updateSong
   )
   .delete(
@@ -24,6 +27,7 @@ router
   .post(
     authController.protect,
     authController.restrictTo('admin'),
+    songController.uploadSongImage,
     songController.createSong
   );
 
