@@ -22,10 +22,12 @@ const userSchema = new mongoose.Schema(
     password: {
       type: 'String',
       required: [true, 'Please provide a password'],
+      select: false,
       min: [8, 'Password size must be greater than or equal to 8 characters'],
     },
     passwordConfirm: {
       type: 'String',
+      select: false,
       required: [true, 'Please confirm your password'],
       validate: {
         // This works only on .create() & .save()
