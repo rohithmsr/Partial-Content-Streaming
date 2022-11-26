@@ -25,6 +25,10 @@ const userSchema = new mongoose.Schema(
       select: false,
       min: [8, 'Password size must be greater than or equal to 8 characters'],
     },
+    role: {
+      type: 'String',
+      select: false,
+    },
     passwordConfirm: {
       type: 'String',
       select: false,
@@ -37,6 +41,7 @@ const userSchema = new mongoose.Schema(
         message: 'Passwords do not match',
       },
     },
+    passwordChangedAt: Date,
   },
   {
     toJSON: { virtuals: true },
@@ -49,6 +54,19 @@ userSchema.methods.isCorrectPassword = async function (
   userPassword
 ) {
   return await bcrypt.compare(candidatePassword, userPassword);
+};
+
+userSchema.methods.changedPasswordAfter = function (JWTTimestamp) {
+  if (!this.passwordChangedAt) {
+    return false;
+  }
+
+  const changedTimestamp = parseInt(
+    this.passwordChangedAt.getTime() / 1000,
+    10
+  );
+
+  return JWTTimestamp < changedTimestamp;
 };
 
 userSchema.pre('save', async function (next) {

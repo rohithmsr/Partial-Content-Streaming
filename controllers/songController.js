@@ -13,10 +13,7 @@ exports.createSong = async (req, res, next) => {
       },
     });
   } catch (err) {
-    res.status(400).json({
-      status: 'fail',
-      message: err,
-    });
+    next(err);
   }
 };
 
@@ -38,10 +35,7 @@ exports.getAllSongs = async (req, res, next) => {
       },
     });
   } catch (err) {
-    res.status(404).json({
-      status: 'fail',
-      message: err,
-    });
+    next(err);
   }
 };
 
@@ -60,10 +54,7 @@ exports.getSong = async (req, res, next) => {
       },
     });
   } catch (err) {
-    res.status(404).json({
-      status: 'fail',
-      message: err,
-    });
+    next(err);
   }
 };
 
@@ -85,10 +76,7 @@ exports.updateSong = async (req, res, next) => {
       },
     });
   } catch (err) {
-    res.status(404).json({
-      status: 'fail',
-      message: err,
-    });
+    next(err);
   }
 };
 
@@ -105,9 +93,6 @@ exports.deleteSong = async (req, res, next) => {
       data: null,
     });
   } catch (err) {
-    res.status(404).json({
-      status: 'fail',
-      message: err,
-    });
+    next(err);
   }
 };
