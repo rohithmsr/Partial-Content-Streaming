@@ -50,7 +50,7 @@ exports.getSong = async (req, res, next) => {
     const song = await Song.findById(req.params.id);
 
     if (!song) {
-      next(new AppError('No song found with that ID', 404));
+      return next(new AppError('No song found with that ID', 404));
     }
 
     res.status(200).json({
@@ -75,7 +75,7 @@ exports.updateSong = async (req, res, next) => {
     });
 
     if (!song) {
-      next(new AppError('No song found with that ID', 404));
+      return next(new AppError('No song found with that ID', 404));
     }
 
     res.status(200).json({
@@ -97,7 +97,7 @@ exports.deleteSong = async (req, res, next) => {
     const song = await Song.findByIdAndDelete(req.params.id);
 
     if (!song) {
-      next(new AppError('No song found with that ID', 404));
+      return next(new AppError('No song found with that ID', 404));
     }
 
     res.status(204).json({
