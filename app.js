@@ -63,7 +63,14 @@ app.use('/api/v1/users', userRouter);
 
 app.get('/api/v1/', (req, res) => {
   res.status(200).json({
-    message: 'Welcome to the music streamer!',
+    message:
+      'Welcome to the music streamer! Provide the endpoints (users/streams/songs)',
+  });
+});
+
+app.get('/', (req, res) => {
+  res.status(200).json({
+    message: 'Welcome to the music streamer! Use /api/v1 endpoints!',
   });
 });
 
