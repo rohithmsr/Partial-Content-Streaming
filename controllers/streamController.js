@@ -1,6 +1,6 @@
-const fs = require('fs');
-const path = require('path');
 const mongodb = require('mongodb');
+
+const Song = require('../models/songModel');
 
 const getRangeHeader = (range, totalLength) => {
   if (range == null || range.length == 0) {
@@ -35,89 +35,100 @@ const DB = process.env.DATABASE.replace(
   process.env.DATABASE_PASSWORD
 );
 
+exports.checkID = async (req, res, next) => {
+  try {
+    const songId = req.params.id;
+
+    const currentSong = await Song.findById(songId);
+    if (!currentSong) {
+      return next(new AppError(`The song with this id does not exist`, 404));
+    }
+
+    req.song = currentSong;
+    next();
+  } catch (err) {
+    next(err);
+  }
+};
+
 const sendStreamResponse = (res, statusCode, downloadStream) => {
   res.status(statusCode);
-
   downloadStream.on('data', (chunk) => {
     res.write(chunk);
   });
-
   downloadStream.on('error', () => {
     res.sendStatus(404);
   });
-
   downloadStream.on('end', () => {
     res.end();
   });
 };
 
-exports.checkID = (req, res, next) => {
-  const fileId = req.params.id;
+exports.downloadStream = async (req, res, next) => {
+  try {
+    const client = new mongodb.MongoClient(DB);
+    const db = client.db('music-crypto-app');
 
-  const song = path.join(__dirname, '..', 'assets', 'songs', `${fileId}.mp3`);
+    const songURL = req.song.songURL;
+    const songFile = await db
+      .collection('fs.files')
+      .findOne({ filename: songURL });
 
-  if (!fs.existsSync(song)) {
-    return res.status(404).json({
-      status: 'fail',
-      message: 'The requested song with the id not found!',
-    });
-  }
+    const bucket = new mongodb.GridFSBucket(db);
 
-  req.song = song;
-  next();
-};
+    const statSize = songFile.length;
+    const rangeRequest = getRangeHeader(req.headers?.range, statSize);
 
-exports.downloadStream = (req, res) => {
-  const stat = fs.statSync(req.song);
-  const rangeRequest = getRangeHeader(req.headers?.range, stat.size);
+    if (!rangeRequest) {
+      res.set(
+        'Content-Range',
+        'bytes ' + 0 + '-' + statSize - 1 + '/' + statSize
+      );
+      res.set('Content-Length', statSize);
+      res.set('Content-Type', 'audio/mpeg');
+      res.set('Accept-Ranges', 'bytes');
 
-  if (!rangeRequest) {
+      // console.log('Full no range');
+      sendStreamResponse(res, 200, bucket.openDownloadStream(songFile._id));
+      return;
+    }
+
+    const start = rangeRequest.start;
+    const end = rangeRequest.end;
+
+    if (start == 0 && end == statSize - 1) {
+      res.set('Content-Type', 'audio/mpeg');
+      res.set('Content-Range', 'bytes ' + start + '-' + end + '/' + statSize);
+      res.set('Content-Length', statSize);
+      res.set('Accept-Ranges', 'bytes');
+
+      // console.log('Full with range');
+      sendStreamResponse(res, 200, bucket.openDownloadStream(songFile._id));
+      return;
+    }
+
+    if (start >= statSize || end >= statSize) {
+      res.set('Content-Range', 'bytes */' + statSize);
+      res.sendStatus(416);
+      return;
+    }
+
     res.set('Content-Type', 'audio/mpeg');
-    res.set(
-      'Content-Range',
-      'bytes ' + 0 + '-' + stat.size - 1 + '/' + stat.size
+    res.set('Content-Range', 'bytes ' + start + '-' + end + '/' + statSize);
+    res.set('Content-Length', start == end ? 0 : end - start + 1);
+    res.set('Accept-Ranges', 'bytes');
+    res.set('Cache-Control', 'no-cache');
+
+    // console.log(`Partial ${start}-${end}`);
+    sendStreamResponse(
+      res,
+      206,
+      bucket.openDownloadStream(songFile._id, {
+        start: start,
+        end: end,
+      })
     );
-    res.set('Content-Length', stat.size);
-    res.set('Accept-Ranges', 'bytes');
-
-    console.log('Full');
-    sendStreamResponse(res, 200, fs.createReadStream(req.song));
-    return;
+  } catch (err) {
+    next(err);
   }
-
-  const start = rangeRequest.start;
-  const end = rangeRequest.end;
-
-  if (start == 0 && end == stat.size - 1) {
-    res.set('Content-Type', 'audio/mpeg');
-    res.set('Content-Range', 'bytes ' + start + '-' + end + '/' + stat.size);
-    res.set('Content-Length', stat.size);
-    res.set('Accept-Ranges', 'bytes');
-
-    console.log('Full');
-    sendStreamResponse(res, 200, fs.createReadStream(req.song));
-    return;
-  }
-
-  if (start >= stat.size || end >= stat.size) {
-    res.set('Content-Range', 'bytes */' + stat.size);
-    res.sendStatus(416);
-    return;
-  }
-
-  res.set('Content-Type', 'audio/mpeg');
-  res.set('Content-Range', 'bytes ' + start + '-' + end + '/' + stat.size);
-  res.set('Content-Length', start == end ? 0 : end - start + 1);
-  res.set('Accept-Ranges', 'bytes');
-  res.set('Cache-Control', 'no-cache');
-
-  console.log(`Partial ${start}-${end}`);
-  sendStreamResponse(
-    res,
-    206,
-    fs.createReadStream(req.song, {
-      start: start,
-      end: end,
-    })
-  );
 };
