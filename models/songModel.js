@@ -21,6 +21,10 @@ const songSchema = new mongoose.Schema(
       type: String,
       validate: [validator.isURL, 'An image must have a valid url'],
     },
+    songWebImageURL: {
+      type: String,
+      validate: [validator.isURL, 'An image must have a valid url'],
+    },
     duration: {
       type: Number,
       max: [43200, 'Duration must be less than or equal to 43200 (12 hours)'],
