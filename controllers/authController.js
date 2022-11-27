@@ -26,7 +26,8 @@ exports.signup = async (req, res, next) => {
       httpOnly: true, // No XSS, browser cannot modify the cookie!
     };
 
-    if (process.env.NODE_ENV === 'production') cookieOptions.secure = true;
+    if (req.secure || req.headers['x-forwarded-proto'] === 'https')
+      cookieOptions.secure = true;
 
     res.cookie('jwt', token, cookieOptions);
     newUser.password = undefined;
