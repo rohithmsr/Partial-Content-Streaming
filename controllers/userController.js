@@ -106,7 +106,7 @@ exports.updateMe = async (req, res, next) => {
 
     // 2) Filtered out unwanted fields names that are not allowed to be updated
     const filteredRequestBody = filterFields(req.body, 'name', 'email');
-    console.log(req.file);
+    // console.log(req.file);
     if (req.file) filteredRequestBody.photoURL = req.file.filename;
 
     // 3) Update user document

@@ -14,7 +14,7 @@ const songSchema = new mongoose.Schema(
     },
     songURL: {
       type: String,
-      required: [true, 'A song must have an url'],
+      default: 'https://google.com/',
       validate: [validator.isURL, 'A song must have a valid url'],
     },
     songImageURL: {
