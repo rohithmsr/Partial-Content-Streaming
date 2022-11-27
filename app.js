@@ -5,6 +5,7 @@ const helmet = require('helmet');
 const mongoSanitize = require('express-mongo-sanitize');
 const xss = require('xss-clean');
 const compression = require('compression');
+const cors = require('cors');
 
 const streamRouter = require('./routes/streamRoutes');
 const songRouter = require('./routes/songRoutes');
@@ -15,6 +16,10 @@ const globalErrorHandler = require('./controllers/errorController');
 const app = express();
 
 app.enable('trust proxy');
+
+// Enable CORS
+app.use(cors());
+app.options('*', cors());
 
 // Security HTTP Headers
 app.use(helmet());
