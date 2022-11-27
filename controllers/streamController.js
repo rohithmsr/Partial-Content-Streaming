@@ -89,7 +89,11 @@ exports.downloadStream = async (req, res, next) => {
       res.set('Accept-Ranges', 'bytes');
 
       // console.log('Full no range');
-      sendStreamResponse(res, 200, bucket.openDownloadStream(songFile._id));
+      sendStreamResponse(
+        res,
+        200,
+        bucket.openDownloadStream(songFile._id, { chunkSizeBytes: 1048576 })
+      );
       return;
     }
 
@@ -103,7 +107,11 @@ exports.downloadStream = async (req, res, next) => {
       res.set('Accept-Ranges', 'bytes');
 
       // console.log('Full with range');
-      sendStreamResponse(res, 200, bucket.openDownloadStream(songFile._id));
+      sendStreamResponse(
+        res,
+        200,
+        bucket.openDownloadStream(songFile._id, { chunkSizeBytes: 1048576 })
+      );
       return;
     }
 
@@ -126,6 +134,7 @@ exports.downloadStream = async (req, res, next) => {
       bucket.openDownloadStream(songFile._id, {
         start: start,
         end: end,
+        chunkSizeBytes: 1048576,
       })
     );
   } catch (err) {
