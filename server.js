@@ -13,11 +13,13 @@ dotenv.config({
 
 const app = require('./app');
 
-const DB = process.env.DATABASE_LOCAL;
-// const DB = process.env.DATABASE.replace(
-//   '<PASSWORD>',
-//   process.env.DATABASE_PASSWORD
-// );
+let DB = process.env.DATABASE.replace(
+  '<PASSWORD>',
+  process.env.DATABASE_PASSWORD
+);
+if (process.env.NODE_ENV !== 'production') {
+  DB = process.env.DATABASE_LOCAL;
+}
 
 mongoose
   .connect(DB, { useNewUrlParser: true, useUnifiedTopology: true })

@@ -30,11 +30,13 @@ const getRangeHeader = (range, totalLength) => {
   return result;
 };
 
-const DB = process.env.DATABASE_LOCAL;
-// const DB = process.env.DATABASE.replace(
-//   '<PASSWORD>',
-//   process.env.DATABASE_PASSWORD
-// );
+let DB = process.env.DATABASE.replace(
+  '<PASSWORD>',
+  process.env.DATABASE_PASSWORD
+);
+if (process.env.NODE_ENV !== 'production') {
+  DB = process.env.DATABASE_LOCAL;
+}
 
 exports.checkID = async (req, res, next) => {
   try {

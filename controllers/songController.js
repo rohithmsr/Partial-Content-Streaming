@@ -5,11 +5,13 @@ const Song = require('../models/songModel');
 const APIFeatures = require('./../utils/apiFeatures');
 const AppError = require('./../utils/appError');
 
-const DB = process.env.DATABASE_LOCAL;
-// const DB = process.env.DATABASE.replace(
-//   '<PASSWORD>',
-//   process.env.DATABASE_PASSWORD
-// );
+let DB = process.env.DATABASE.replace(
+  '<PASSWORD>',
+  process.env.DATABASE_PASSWORD
+);
+if (process.env.NODE_ENV !== 'production') {
+  DB = process.env.DATABASE_LOCAL;
+}
 
 // const multerStorage = multer.diskStorage({
 //   destination: (req, file, cb) => {
