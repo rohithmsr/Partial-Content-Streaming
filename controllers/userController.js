@@ -4,10 +4,11 @@ const { GridFsStorage } = require('multer-gridfs-storage');
 const User = require('./../models/userModel');
 const AppError = require('./../utils/appError');
 
-const DB = process.env.DATABASE.replace(
-  '<PASSWORD>',
-  process.env.DATABASE_PASSWORD
-);
+const DB = process.env.DATABASE_LOCAL;
+// const DB = process.env.DATABASE.replace(
+//   '<PASSWORD>',
+//   process.env.DATABASE_PASSWORD
+// );
 
 // const multerStorage = multer.diskStorage({
 //   destination: (req, file, cb) => {

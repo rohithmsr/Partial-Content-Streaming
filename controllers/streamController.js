@@ -30,10 +30,11 @@ const getRangeHeader = (range, totalLength) => {
   return result;
 };
 
-const DB = process.env.DATABASE.replace(
-  '<PASSWORD>',
-  process.env.DATABASE_PASSWORD
-);
+const DB = process.env.DATABASE_LOCAL;
+// const DB = process.env.DATABASE.replace(
+//   '<PASSWORD>',
+//   process.env.DATABASE_PASSWORD
+// );
 
 exports.checkID = async (req, res, next) => {
   try {
