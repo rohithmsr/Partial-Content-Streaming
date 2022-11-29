@@ -1,6 +1,9 @@
 const { promisify } = require('util');
 const jwt = require('jsonwebtoken');
+const nodemailer = require('nodemailer');
+const bcrypt = require('bcryptjs');
 const User = require('./../models/userModel');
+const OTP = require('./../models/OTPModel');
 const AppError = require('./../utils/appError');
 
 const signToken = (id) => {
@@ -9,17 +12,95 @@ const signToken = (id) => {
   });
 };
 
-exports.signup = async (req, res, next) => {
+// Nodemailer stuff
+const transporter = nodemailer.createTransport({
+  host: 'smtp-mail.outlook.com',
+  auth: {
+    user: process.env.AUTH_EMAIL,
+    pass: process.env.AUTH_PASS,
+  },
+});
+
+transporter.verify((err, success) => {
+  if (err) {
+    console.log('NODEMAILER ERROR = ', err);
+  } else {
+    console.log('Ready for messages!');
+  }
+});
+
+const sendOTPVerificationEmail = async ({ id, email }, res, next) => {
   try {
-    const newUser = await User.create({
-      name: req.body.name,
-      email: req.body.email,
-      password: req.body.password,
-      passwordConfirm: req.body.passwordConfirm,
-      photoURL: req.body.photoURL,
+    const otp = `${Math.floor(10000 + Math.random() * 90000)}`;
+
+    // mail options
+    const mailOptions = {
+      from: process.env.AUTH_EMAIL,
+      to: email,
+      subject: 'Crypto Music - Verify your email',
+      html: `<p>Enter the OTP <b> ${otp} </b> in the app to verify your email address and complete the verification process! <br/> This code <b>expires in 1 hour</b> </p>`,
+    };
+
+    const newOTPVerification = await OTP.create({
+      userId: id,
+      otp: otp,
+      createdAt: Date.now(),
+      expiresAt: Date.now() + 3600000,
     });
 
-    const token = signToken(newUser._id);
+    await transporter.sendMail(mailOptions);
+
+    res.status(201).json({
+      status: 'pending',
+      data: {
+        userId: newOTPVerification.userId,
+        email: email,
+      },
+    });
+  } catch (err) {
+    next(err);
+  }
+};
+
+exports.validateOTP = async (req, res, next) => {
+  try {
+    // 3) Send token to the client!
+    const { userId, otp } = req.body;
+    if (!userId || !otp) {
+      return next(new AppError(`Enter a valid userId and the otp`, 400));
+    }
+
+    const OTPrecords = await OTP.find({ userId: userId });
+
+    if (OTPrecords.length <= 0) {
+      return next(
+        new AppError(
+          `Account does not exist or has been verified already!`,
+          400
+        )
+      );
+    }
+
+    const { expiresAt } = OTPrecords[0];
+    const hashedOTP = OTPrecords[0].otp;
+
+    if (expiresAt < Date.now()) {
+      return next(new AppError('Code has expired. Please request again!'));
+    }
+
+    const validOTP = await bcrypt.compare(otp, hashedOTP);
+
+    if (!validOTP) {
+      return next(new AppError('Invalid code passed. Check your inbox!'));
+    }
+
+    const newUser = await User.findByIdAndUpdate(userId, { verified: true });
+    newUser.password = undefined;
+    newUser.verified = true;
+
+    await OTP.deleteMany({ userId });
+
+    const token = signToken(userId);
     const cookieOptions = {
       maxAge: process.env.JWT_EXPIRES_IN,
       secure: false,
@@ -30,9 +111,6 @@ exports.signup = async (req, res, next) => {
       cookieOptions.secure = true;
 
     res.cookie('jwt', token, cookieOptions);
-    newUser.password = undefined;
-
-    console.log(req);
 
     res.status(201).json({
       status: 'success',
@@ -41,6 +119,61 @@ exports.signup = async (req, res, next) => {
         user: newUser,
       },
     });
+  } catch (err) {
+    next(err);
+  }
+};
+
+exports.resendOTP = async (req, res, next) => {
+  try {
+    const { userId, email } = req.body;
+
+    if (!userId || !email) {
+      return next(AppError('Empty user details are not allowed', 401));
+    }
+
+    await OTP.deleteMany({ userId: userId });
+    await sendOTPVerificationEmail({ id: userId, email }, res, next);
+  } catch (err) {
+    next(err);
+  }
+};
+
+exports.signup = async (req, res, next) => {
+  try {
+    const newUser = await User.create({
+      name: req.body.name,
+      email: req.body.email,
+      password: req.body.password,
+      passwordConfirm: req.body.passwordConfirm,
+      photoURL: req.body.photoURL,
+      verified: false,
+    });
+
+    await sendOTPVerificationEmail(newUser, res, next);
+
+    // const token = signToken(newUser._id);
+    // const cookieOptions = {
+    //   maxAge: process.env.JWT_EXPIRES_IN,
+    //   secure: false,
+    //   httpOnly: true, // No XSS, browser cannot modify the cookie!
+    // };
+
+    // if (req.secure || req.headers['x-forwarded-proto'] === 'https')
+    //   cookieOptions.secure = true;
+
+    // res.cookie('jwt', token, cookieOptions);
+    // newUser.password = undefined;
+
+    // // console.log(req);
+
+    // res.status(201).json({
+    //   status: 'success',
+    //   token,
+    //   data: {
+    //     user: newUser,
+    //   },
+    // });
   } catch (err) {
     next(err);
   }
@@ -67,12 +200,14 @@ exports.login = async (req, res, next) => {
       return next(new AppError('Incorrect email/password', 401));
     }
 
-    // 3) Send token to the client!
-    const token = signToken(user._id);
-    res.status(200).json({
-      status: 'success',
-      token,
-    });
+    // 2.5) Send OTP request!
+    await sendOTPVerificationEmail(user, res, next);
+
+    // const token = signToken(user._id);
+    // res.status(200).json({
+    //   status: 'success',
+    //   token,
+    // });
   } catch (err) {
     next(err);
   }

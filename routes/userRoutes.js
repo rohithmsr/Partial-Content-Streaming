@@ -10,16 +10,19 @@ router.post('/login', authController.login);
 
 router.get(
   '/',
-  // authController.protect,
-  // authController.restrictTo('admin'),
+  authController.protect,
+  authController.restrictTo('admin'),
   userController.getAllUsers
 );
 
 router.patch(
   '/updateMe',
-  // authController.protect,
+  authController.protect,
   userController.uploadUserPhoto,
   userController.updateMe
 );
+
+router.post('/verifyOTP', authController.validateOTP);
+router.post('/resendOTP', authController.resendOTP);
 
 module.exports = router;

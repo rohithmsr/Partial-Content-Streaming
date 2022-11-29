@@ -1,5 +1,4 @@
 const express = require('express');
-const streamController = require('./../controllers/streamController');
 const songController = require('./../controllers/songController');
 const authController = require('./../controllers/authController');
 
@@ -10,22 +9,25 @@ router
   .get(songController.getSong)
   .put(songController.uploadSongURL, songController.addSongFile)
   .patch(
-    // authController.protect,
-    // authController.restrictTo('admin'),
+    authController.protect,
+    authController.restrictTo('admin'),
     songController.uploadSongImage,
     songController.updateSong
   )
   .delete(
-    // authController.protect,
-    // authController.restrictTo('admin'),
+    authController.protect,
+    authController.restrictTo('admin'),
     songController.deleteSong
   );
 
-router.route('/').get(songController.getAllSongs).post(
-  // authController.protect,
-  // authController.restrictTo('admin'),
-  songController.uploadSongImage,
-  songController.createSong
-);
+router
+  .route('/')
+  .get(songController.getAllSongs)
+  .post(
+    authController.protect,
+    authController.restrictTo('admin'),
+    songController.uploadSongImage,
+    songController.createSong
+  );
 
 module.exports = router;
