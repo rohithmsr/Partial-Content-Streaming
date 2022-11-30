@@ -1,22 +1,10 @@
 const { promisify } = require('util');
 const jwt = require('jsonwebtoken');
-const Sib = require('sib-api-v3-sdk');
+const nodemailer = require('nodemailer');
 const bcrypt = require('bcryptjs');
 const User = require('./../models/userModel');
 const OTP = require('./../models/OTPModel');
 const AppError = require('./../utils/appError');
-
-const client = Sib.ApiClient.instance;
-
-const apiKey = client.authentications['api-key'];
-apiKey.apiKey = process.env.SIB_API_KEY;
-
-const transactionalEmailApi = new Sib.TransactionalEmailsApi();
-
-const sender = {
-  email: process.env.SIB_SENDER_EMAIL,
-  name: 'Crypto Music App',
-};
 
 const signToken = (id) => {
   return jwt.sign({ id: id }, process.env.JWT_SECRET, {
@@ -25,10 +13,34 @@ const signToken = (id) => {
 };
 
 // Nodemailer stuff
+const transporter = nodemailer.createTransport({
+  service: 'SendGrid',
+  // port: 465,
+  auth: {
+    user: process.env.SEND_GRID_USERNAME,
+    pass: process.env.SEND_GRID_API_KEY,
+  },
+});
+
+transporter.verify((err, success) => {
+  if (err) {
+    console.log('NODEMAILER ERROR = ', err);
+  } else {
+    console.log('Ready for messages!');
+  }
+});
 
 const sendOTPVerificationEmail = async ({ id, email }, res, next) => {
   try {
     const otp = `${Math.floor(10000 + Math.random() * 90000)}`;
+
+    // mail options
+    const mailOptions = {
+      from: process.env.AUTH_EMAIL,
+      to: email,
+      subject: 'Crypto Music - Verify your email',
+      html: `<p>Enter the OTP <b> ${otp} </b> in the app to verify your email address and complete the verification process! <br/> This code <b>expires in 1 hour</b> </p>`,
+    };
 
     const newOTPVerification = await OTP.create({
       userId: id,
@@ -37,24 +49,7 @@ const sendOTPVerificationEmail = async ({ id, email }, res, next) => {
       expiresAt: Date.now() + 3600000,
     });
 
-    // mail options
-    // const mailOptions = {
-    //   from: process.env.AUTH_EMAIL,
-    //   to: email,
-    //   subject: 'Crypto Music - Verify your email',
-    //   html: `<p>Enter the OTP <b> ${otp} </b> in the app to verify your email address and complete the verification process! <br/> This code <b>expires in 1 hour</b> </p>`,
-    // };
-    // await transporter.sendMail(mailOptions);
-
-    await transactionalEmailApi.sendTransacEmail({
-      subject: 'Crypto Music - Verify your account!',
-      sender,
-      to: [{ email: email }],
-      htmlContent: `<p>Enter the OTP <b> {{params.otp}} </b> in the app to verify your email address and complete the verification process! <br/> This code <b>expires in 1 hour</b></p>`,
-      params: {
-        otp,
-      },
-    });
+    await transporter.sendMail(mailOptions);
 
     res.status(201).json({
       status: 'pending',
