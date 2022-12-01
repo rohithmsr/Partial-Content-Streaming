@@ -1,6 +1,7 @@
 const mongodb = require('mongodb');
 
 const Song = require('../models/songModel');
+const AppError = require('./../utils/appError');
 
 const getRangeHeader = (range, totalLength) => {
   if (range == null || range.length == 0) {

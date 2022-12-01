@@ -243,6 +243,10 @@ exports.protect = async (req, res, next) => {
       );
     }
 
+    if (!currentUser.verified) {
+      return next(new AppError(`The user is not verified`, 401));
+    }
+
     // 4) Check if user changes password after the token was issued
     if (currentUser.changedPasswordAfter(decoded.iat)) {
       return next(
@@ -279,4 +283,46 @@ exports.restrictTo = (...roles) => {
       next(err);
     }
   };
+};
+
+exports.checkValidToken = async (req, res, next) => {
+  try {
+    const token = req.params.token;
+
+    if (!token) {
+      return next(new AppError(`Please enter a valid token`, 400));
+    }
+
+    const decoded = await jwt.verify(token, process.env.JWT_SECRET);
+
+    // Check if user still exists (user deleted, token still resides)
+    const currentUser = await User.findById(decoded.id);
+    if (!currentUser) {
+      res.status(200).json({
+        status: 'success',
+        valid: false,
+        message: `The user belonging to the token does not exist`,
+      });
+
+      return;
+    }
+
+    // Check if user changes password after the token was issued
+    if (currentUser.changedPasswordAfter(decoded.iat)) {
+      res.status(200).json({
+        status: 'success',
+        valid: false,
+        message: `User has recently changed his/her password. Please login again!`,
+      });
+
+      return;
+    }
+
+    res.status(200).json({
+      status: 'success',
+      valid: true,
+    });
+  } catch (err) {
+    next(err);
+  }
 };
