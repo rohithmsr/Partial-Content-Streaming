@@ -1,7 +1,41 @@
 const mongodb = require('mongodb');
+const jwt = require('jsonwebtoken');
+const { promisify } = require('util');
 
 const Song = require('../models/songModel');
+const User = require('../models/userModel');
 const AppError = require('./../utils/appError');
+
+const validateToken = async (token, next) => {
+  try {
+    // 2) Validate token
+    const decoded = await promisify(jwt.verify)(token, process.env.JWT_SECRET);
+
+    // 3) Check if user still exists (user deleted, token still resides)
+    const currentUser = await User.findById(decoded.id);
+    if (!currentUser) {
+      return next(
+        new AppError(`The user belonging to the token does not exist`, 401)
+      );
+    }
+
+    if (!currentUser.verified) {
+      return next(new AppError(`The user is not verified`, 401));
+    }
+
+    // 4) Check if user changes password after the token was issued
+    if (currentUser.changedPasswordAfter(decoded.iat)) {
+      return next(
+        new AppError(
+          `User has recently changed his/her password. Please login again!`,
+          401
+        )
+      );
+    }
+  } catch (err) {
+    next(err);
+  }
+};
 
 const getRangeHeader = (range, totalLength) => {
   if (range == null || range.length == 0) {
@@ -70,6 +104,8 @@ const sendStreamResponse = (res, statusCode, downloadStream) => {
 
 exports.downloadStream = async (req, res, next) => {
   try {
+    await validateToken(req.query.token, next);
+
     const client = new mongodb.MongoClient(DB);
     const db = client.db('music-crypto-app');
 
