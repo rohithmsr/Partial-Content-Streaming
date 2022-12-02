@@ -32,8 +32,10 @@ const validateToken = async (token, next) => {
         )
       );
     }
+
+    return { valid: true };
   } catch (err) {
-    next(err);
+    return { valid: false, message: err.message };
   }
 };
 
@@ -104,7 +106,10 @@ const sendStreamResponse = (res, statusCode, downloadStream) => {
 
 exports.downloadStream = async (req, res, next) => {
   try {
-    await validateToken(req.query.token, next);
+    const tokenValidity = await validateToken(req.params.token, next);
+    if (!tokenValidity.valid) {
+      return next(new AppError(tokenValidity.message, 403));
+    }
 
     const client = new mongodb.MongoClient(DB);
     const db = client.db('music-crypto-app');
