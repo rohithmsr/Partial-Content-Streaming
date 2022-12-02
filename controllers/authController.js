@@ -102,16 +102,16 @@ exports.validateOTP = async (req, res, next) => {
     await OTP.deleteMany({ userId });
 
     const token = signToken(userId);
-    const cookieOptions = {
-      maxAge: process.env.JWT_EXPIRES_IN,
-      secure: false,
-      httpOnly: true, // No XSS, browser cannot modify the cookie!
-    };
+    // const cookieOptions = {
+    //   maxAge: process.env.JWT_EXPIRES_IN,
+    //   secure: false,
+    //   httpOnly: true, // No XSS, browser cannot modify the cookie!
+    // };
 
-    if (req.secure || req.headers['x-forwarded-proto'] === 'https')
-      cookieOptions.secure = true;
+    // if (req.secure || req.headers['x-forwarded-proto'] === 'https')
+    //   cookieOptions.secure = true;
 
-    res.cookie('jwt', token, cookieOptions);
+    // res.cookie('jwt', token, cookieOptions);
 
     res.status(201).json({
       status: 'success',
